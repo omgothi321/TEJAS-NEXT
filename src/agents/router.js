@@ -5,6 +5,8 @@ const FileAgent = require('./file.agent');
 const CodeAgent = require('./code.agent');
 const FinancialAgent = require('./financial.agent');
 const IntentParser = require('../core/intent');
+const SkillRegistry = require('../skills/registry');
+const path = require('path');
 
 // ─── TEJAS SMART ROUTER v3.0 ──────────────────────────────────────────────────
 // Now powered by IntentParser (AI Brain) + Scoring Fallback (Logic)
@@ -14,13 +16,17 @@ class AgentRouter {
     this.ai     = aiEngine;
     this.memory = memory;
     this.parser = new IntentParser(aiEngine);
+    this.skills = new SkillRegistry(path.join(__dirname, '../skills'));
+    
+    // Auto-discover skills
+    this.skills.discover();
 
     this.agents = {
       workflow:  { name: 'workflow' },
-      code:      new CodeAgent(aiEngine, memory),
-      file:      new FileAgent(aiEngine, memory),
-      web:       new WebAgent(aiEngine, memory),
-      financial: new FinancialAgent(aiEngine, memory),
+      code:      new CodeAgent(aiEngine, memory, this.skills),
+      file:      new FileAgent(aiEngine, memory, this.skills),
+      web:       new WebAgent(aiEngine, memory, this.skills),
+      financial: new FinancialAgent(aiEngine, memory, this.skills),
       robotics:  { name: 'robotics' }
     };
 
