@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.tejas/
+*.db
+*.db-shm
+*.db-wal
+**/models/
+node_modules/
+*.log
+logs/
+*.bak
+*.tmp

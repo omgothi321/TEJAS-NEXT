@@ -1,0 +1,17 @@
+{
+  "sector": "Economics, Advanced Finance, & Trading",
+  "data": [
+    {
+      "concept": "Black-Scholes Model",
+      "metadata": { "description": "Mathematical model for pricing an options contract.", "field": "Quantitative Finance" }
+    },
+    {
+      "concept": "Nash Equilibrium",
+      "metadata": { "description": "State where players in a game theory model reach optimal strategy.", "field": "Microeconomics" }
+    },
+    {
+      "concept": "HFT Liquidity Profiling",
+      "metadata": { "description": "Analyzing order book depth for sub-millisecond execution.", "field": "Trading Infrastructure" }
+    }
+  ]
+}

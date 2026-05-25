@@ -1,0 +1,13 @@
+{
+  "sector": "Philosophy, Metaphysics, & Spirituality",
+  "data": [
+    {
+      "concept": "Advaita Vedanta",
+      "metadata": { "description": "Non-dual reality framework; source of discerning perception.", "field": "Eastern Philosophy" }
+    },
+    {
+      "concept": "Stoic Resilience",
+      "metadata": { "description": "Dichotomy of control applied to algorithmic risk management.", "field": "Philosophy" }
+    }
+  ]
+}

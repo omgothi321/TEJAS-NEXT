@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tejas Dashboard</title>
+    <style>
+        :root { --bg: #0a0a0a; --accent: #00ff41; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        .header { border-bottom: 1px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
+        #terminal { background: #000; padding: 15px; border: 1px solid #333; height: 300px; overflow-y: scroll; color: var(--accent); }
+        input { background: #111; color: var(--accent); border: 1px solid #333; padding: 10px; width: 80%; }
+        button { background: var(--accent); color: #000; padding: 10px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>TEJAS OS v2.1.0 | <span id="status">ACTIVE</span></h1></div>
+    <div id="terminal"></div>
+    <div style="margin-top:20px;">
+        <input type="text" id="taskInput" placeholder="Enter task (e.g., 'what time is it')">
+        <button onclick="runTask()">EXECUTE</button>
+    </div>
+    <script>
+        const term = document.getElementById('terminal');
+        function log(msg) { term.innerHTML += `<div>> ${msg}</div>`; term.scrollTop = term.scrollHeight; }
+        async function runTask() {
+            const task = document.getElementById('taskInput').value;
+            const token = prompt("Enter Auth Token:");
+            const res = await fetch('/api/run', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task })
+            });
+            const data = await res.json();
+            log(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
