@@ -13,6 +13,19 @@ class Sanitizer {
   static sanitizeShell(command) {
     if (!command) return '';
 
+    // 🛡️ Block destructive commands
+    const DESTRUCTIVE = [
+      /^rm\s+-[rf]{1,3}\s+\//i,
+      /^mkfs/i,
+      /^dd\s+if=/i,
+      /^chmod\s+-R\s+777\s+\//i
+    ];
+    for (const p of DESTRUCTIVE) {
+      if (p.test(command.trim())) {
+        throw new Error(`Blocked destructive command: ${command}`);
+      }
+    }
+
     // Block non-pipe dangerous operators first (these are never safe)
     const nonPipeOps = [';', '&&', '||', '>', '<', '`'];
     for (const op of nonPipeOps) {
