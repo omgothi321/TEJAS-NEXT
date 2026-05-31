@@ -1,0 +1,31 @@
+# GitHub Sponsor Configuration for TEJAS-NEXT
+# This file enables the sponsor button on your repository
+
+# Uncomment and fill in your sponsorship links below:
+
+# GitHub Sponsors (Recommended)
+# github: [your-github-username]
+
+# Patreon
+# patreon: [your-patreon-username]
+
+# Open Collective
+# open_collective: [your-collective-username]
+
+# Ko-fi
+# ko_fi: [your-kofi-username]
+
+# Buy Me a Coffee
+# buy_me_coffee: [your-bmac-username]
+
+# Liberapay
+# liberapay: [your-liberapay-username]
+
+# IssueHunt
+# issuehunt: [your-issuehunt-username]
+
+# OtherLinks (for custom sponsorship links)
+# custom: ['https://example.com/sponsor']
+
+# Example with GitHub Sponsors enabled:
+# github: omgothi321
