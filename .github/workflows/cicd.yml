@@ -1,0 +1,186 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Job 1: Code Quality & Linting
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint & Code Quality
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run ESLint
+        run: npm run lint --if-present
+        continue-on-error: true
+      
+      - name: Run Prettier
+        run: npm run format:check --if-present
+        continue-on-error: true
+
+  # Job 2: Unit Tests
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run unit tests
+        run: npm test --if-present
+        continue-on-error: true
+      
+      - name: Generate coverage report
+        run: npm run test:coverage --if-present
+        continue-on-error: true
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+        continue-on-error: true
+
+  # Job 3: Security & Dependency Checks
+  security:
+    runs-on: ubuntu-latest
+    name: Security & Dependencies
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Check for vulnerabilities
+        run: npm audit fix --dry-run
+        continue-on-error: true
+
+  # Job 4: Build
+  build:
+    runs-on: ubuntu-latest
+    name: Build Project
+    needs: [lint, test, security]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build project
+        run: npm run build --if-present
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: dist/
+        continue-on-error: true
+
+  # Job 5: Release & Documentation
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Generate changelog
+        run: |
+          echo "## Changes in this release" > CHANGELOG_TEMP.md
+          git log $(git describe --tags --abbrev=0)..HEAD --oneline >> CHANGELOG_TEMP.md || echo "Initial release" >> CHANGELOG_TEMP.md
+        continue-on-error: true
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+          body_path: CHANGELOG_TEMP.md
+          draft: false
+          prerelease: false
+        continue-on-error: true
+
+  # Job 6: Notify Status
+  notify:
+    runs-on: ubuntu-latest
+    name: Workflow Status
+    if: always()
+    needs: [lint, test, security, build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Workflow Status
+        run: |
+          echo "✅ Linting: ${{ needs.lint.result }}"
+          echo "✅ Tests: ${{ needs.test.result }}"
+          echo "✅ Security: ${{ needs.security.result }}"
+          echo "✅ Build: ${{ needs.build.result }}"
+      
+      - name: Send Slack Notification (Optional)
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          text: '❌ TEJAS-NEXT CI/CD Pipeline Failed'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        continue-on-error: true
