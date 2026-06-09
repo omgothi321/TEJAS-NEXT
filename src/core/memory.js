@@ -310,11 +310,18 @@ class MemoryManager {
 
     // 1. Semantic Embedding
     let embedding = null;
-    try {
-      embedding = await this.embeddings.embed(task.task);
-    } catch (err) {
-      if (this._config?.preferences?.verbose) console.warn('[Memory] Embedding failed:', err.message);
-    }
+    
+    // Store task immediately, embed in background
+    setImmediate(async () => {
+      try {
+        const vec = await this.embeddings.embed(task.task);
+        this.db.db.prepare(
+          'UPDATE tasks SET embedding=? WHERE task=? ORDER BY created_at DESC LIMIT 1'
+        ).run(Buffer.from(vec.buffer), task.task);
+      } catch (err) {
+        if (this._config?.preferences?.verbose) console.warn('[Memory] Background embedding failed:', err.message);
+      }
+    });
 
     // 2. Persistent SQL Log
     try {
@@ -324,7 +331,7 @@ class MemoryManager {
       `).run(
         id,
         task.task,
-        embedding ? Buffer.from(embedding.buffer) : null,
+        null, // Embedding handled in background
         task.agent,
         task.success ? 1 : 0,
         task.duration_ms || 0,

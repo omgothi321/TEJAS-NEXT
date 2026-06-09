@@ -39,6 +39,14 @@ class Sanitizer {
       throw new Error(`Forbidden shell operator detected in: "${command}"`);
     }
 
+    const SENSITIVE = ['/etc/', '/proc/', '/sys/', '/root/.ssh', '/var/log/', '/boot/'];
+    const lower = command.toLowerCase();
+    for (const path of SENSITIVE) {
+      if (lower.includes(path)) {
+        throw new Error(`Access to sensitive system path blocked: "${command}"`);
+      }
+    }
+
     // If pipe present, validate EACH segment individually
     if (command.includes('|')) {
       const segments = command.split('|');

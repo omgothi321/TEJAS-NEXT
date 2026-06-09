@@ -98,6 +98,15 @@ class Executor {
     try {
       const u = new URL(url);
       if (!['http:', 'https:'].includes(u.protocol)) return false;
+      
+      const hostname = u.hostname.toLowerCase();
+      if (
+        hostname === '0.0.0.0' ||
+        hostname === '::' ||
+        hostname === '::1' ||
+        hostname === '[::1]'
+      ) return false;
+
       const blocked = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/i;
       return !blocked.test(u.hostname);
     } catch { return false; }

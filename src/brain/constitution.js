@@ -131,10 +131,12 @@ function buildPrompt(task, memoryContext = {}, options = {}) {
 }
 
 // ─── TASK DECOMPOSITION PROMPT ────────────────────────────────────────────────
-function buildDecomposePrompt(task, context) {
+function buildDecomposePrompt(task, context, skillContent = null) {
   const ctxStr = buildContext(context, task);
+  const expertSection = skillContent ? `## Expert Persona\n${skillContent}\n\n` : '';
 
   return `${CONSTITUTION}
+${expertSection}
 ${ctxStr}
 CRITICAL RULES:
 - If task is conversational, use "explain" with the description as your DIRECT RESPONSE.

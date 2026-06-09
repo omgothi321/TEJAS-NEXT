@@ -4,6 +4,9 @@ const { buildDecomposePrompt, CONSTITUTION } = require('./constitution');
 const SmartModelRouter = require('./model-router');
 const WorkflowCache    = require('./cache');
 const SelfCorrector    = require('./corrector');
+const AgentRegistry    = require('../skills/registry');
+const path             = require('path');
+const fs               = require('fs-extra');
 
 // ─── TEJAS BRAIN ──────────────────────────────────────────────────────────────
 // Master orchestrator.
@@ -33,6 +36,11 @@ class TejasB {
       memory.embeddings
     );
     this.corrector = new SelfCorrector(aiEngine);
+    this.registry = new AgentRegistry(
+      path.join(__dirname, '../skills/agents')
+    );
+    this.registry.discover().catch(() => {});
+    
     this._stats    = {
       cache_hits:  0,
       api_calls:   0,
@@ -67,6 +75,10 @@ class TejasB {
       if (this.config.verbose) console.warn('[Brain] Memory context retrieval failed:', err.message);
     }
 
+    // Expert Persona
+    const skillPersona = await this._getSkillPersona(task);
+    if (skillPersona) console.log(`[Tejas] 🧠 ${skillPersona.name}`);
+
     // 3. Multi-Model Fallback Logic (Issue #100 - Resilience)
     const preferredModels = this.modelRouter.selectModel(task, options).prefer || [];
     const modelsToTry    = [...new Set([this.modelRouter.selectModel(task, options).model, ...preferredModels, 'groq', 'gemini', 'ollama'])];
@@ -79,7 +91,7 @@ class TejasB {
       const originalModel = this.ai.model;
       this.ai.model = modelName;
       
-      const prompt = buildDecomposePrompt(task, memCtx);
+      const prompt = buildDecomposePrompt(task, memCtx, skillPersona?.content || null);
       this._stats.api_calls++;
       const start = Date.now();
 
@@ -111,6 +123,38 @@ class TejasB {
 
     throw lastError || new Error('All AI models failed to process task');
   }
+
+  async _getSkillPersona(task) {
+    const t = task.toLowerCase();
+    const map = [
+      [/review.*code|code.*review|audit.*code|find.*bug/,     'engineering-code-reviewer'],
+      [/security|vulnerabilit|exploit|penetrat|harden/,       'engineering-security-engineer'],
+      [/deploy|docker|devops|ci.?cd|pipeline|nginx/,          'engineering-devops-automator'],
+      [/stock|invest|portfolio|zerodha|market|equity|nifty/,  'finance-investment-researcher'],
+      [/game|unity|godot|unreal|roblox|level.*design/,        'game-designer'],
+      [/implement|refactor|write.*code|build.*function/,      'engineering-senior-developer'],
+      [/architect|system.*design|microservice|api.*design/,   'engineering-backend-architect'],
+      [/technical.*writ|readme|documentation|docs/,           'engineering-technical-writer'],
+    ];
+    for (const [pattern, skill] of map) {
+      if (pattern.test(t)) {
+        return this._loadAgentPersona(skill);
+      }
+    }
+    return null;
+  }
+
+  async _loadAgentPersona(skillName) {
+    try {
+      const agentPath = path.join(
+        __dirname, '../skills/agents', `${skillName}.md`
+      );
+      if (!await fs.pathExists(agentPath)) return null;
+      const content = (await fs.readFile(agentPath, 'utf8')).slice(0, 1500);
+      return { name: skillName, content };
+    } catch { return null; }
+  }
+
 
   // ── CALL WITH CONTEXT ─────────────────────────────────────────────────────
   async call(prompt, options) {
