@@ -59,7 +59,7 @@ class AIEngine {
     if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
     messages.push({ role: 'user', content: prompt });
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-      model:       options.groq_model || 'llama-3.3-70b-versatile',
+      model:       options.groq_model || 'llama3-70b-8192',
       max_tokens:  options.max_tokens || 4096,
       temperature: options.temperature || 0.7,
       messages
@@ -94,16 +94,16 @@ class AIEngine {
     const apiKey = this.apiKeys.gemini || process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('No Gemini API key. Get free key at aistudio.google.com → Run: tejas config --set api_keys.gemini=YOUR_KEY');
     
-    // Map simple versions to full IDs (Updated for May 2026)
-    let model = options.gemini_model || options.gemini_version || '3.0';
+    // Map simple versions to full IDs (Updated for June 2026)
+    let model = options.gemini_model || options.gemini_version || '3.5';
     if (model === '1.5') model = 'gemini-1.5-pro';
     if (model === '1.5-flash') model = 'gemini-1.5-flash';
     if (model === '2.0') model = 'gemini-2.0-pro';
     if (model === '2.0-flash') model = 'gemini-2.0-flash';
     if (model === '2.5') model = 'gemini-2.5-pro';
     if (model === '2.5-flash') model = 'gemini-2.5-flash';
-    if (model === '3.0') model = 'gemini-3-pro-preview';
-    if (model === '3.0-flash') model = 'gemini-3-flash-preview';
+    if (model === '3.0') model = 'gemini-3.0-pro';
+    if (model === '3.0-flash') model = 'gemini-3.0-flash';
     if (model === '3.5') model = 'gemini-3.5-flash';
     
     if (!model.startsWith('gemini-') && !model.startsWith('models/')) {

@@ -13,9 +13,10 @@ const execFileAsync = promisify(execFile);
 // Used when task contains: review, fix, debug, refactor, write test, explain code
 
 class CodeAgent {
-  constructor(aiEngine, memory) {
+  constructor(aiEngine, memory, skills) {
     this.ai     = aiEngine;
     this.memory = memory;
+    this.skills = skills;
     this.name   = 'code';
     this.cwd    = process.cwd();
   }

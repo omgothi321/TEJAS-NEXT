@@ -3,19 +3,43 @@ const fs = require('fs-extra');
 const path = require('path');
 
 class AgentSkillRegistry {
-  constructor(ai, memory) {
-    this.ai = ai;
-    this.memory = memory;
-    this.agentDir = path.join(__dirname, 'agents');
+  constructor(skillDir) {
+    this.skillDir = skillDir || path.join(__dirname);
+    this.skills = new Map();
   }
 
-  async runAgent(agentName, task) {
-    const files = await fs.readdir(this.agentDir);
+  /**
+   * Auto-discover skills in the skills directory
+   */
+  async discover() {
+    try {
+      const files = await fs.readdir(this.skillDir);
+      for (const file of files) {
+        if (file.endsWith('.js') && file !== 'registry.js' && file !== 'agent-registry.js') {
+          try {
+            const SkillClass = require(path.join(this.skillDir, file));
+            const skill = new SkillClass();
+            if (skill.name) {
+              this.skills.set(skill.name, skill);
+            }
+          } catch (e) {
+            // console.error(`Failed to load skill ${file}: ${e.message}`);
+          }
+        }
+      }
+    } catch (err) {
+      // console.error('Skill discovery failed:', err.message);
+    }
+  }
+
+  async runAgent(agentName, task, ai, memory) {
+    const agentDir = path.join(this.skillDir, 'agents');
+    const files = await fs.readdir(agentDir);
     const match = files.find(f => f.toLowerCase().includes(agentName.toLowerCase()) && f.endsWith('.md'));
     
     if (!match) return "Agent not found.";
 
-    const character = await fs.readFile(path.join(this.agentDir, match), 'utf8');
+    const character = await fs.readFile(path.join(agentDir, match), 'utf8');
     
     // Strict Constitutional grounding
     const systemPrompt = `
@@ -29,10 +53,10 @@ ${character}
 `;
 
     // Fetch memory/knowledge context to ground the response
-    const context = await this.memory.getContextSummary(task);
+    const context = await memory.getContextSummary(task);
     const finalPrompt = `Context: ${JSON.stringify(context)}\n\nTask: ${task}`;
     
-    return await this.ai.call(finalPrompt, systemPrompt);
+    return await ai.call(finalPrompt, systemPrompt);
   }
 }
 module.exports = AgentSkillRegistry;

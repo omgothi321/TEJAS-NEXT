@@ -8,9 +8,10 @@ const KiteConnector = require('./financial/kite');
  * Primary connector: Zerodha Kite (Hybrid Telemetry + Playwright)
  */
 class FinancialAgent {
-  constructor(aiEngine, memory) {
+  constructor(aiEngine, memory, skills) {
     this.ai = aiEngine;
     this.memory = memory;
+    this.skills = skills;
     this.name = 'financial';
     this.connector = null;
   }

@@ -10,9 +10,10 @@ const Sanitizer = require('../utils/sanitizer');
 // Used when task contains: read, open, analyze, summarize, find file, organize
 
 class FileAgent {
-  constructor(aiEngine, memory) {
+  constructor(aiEngine, memory, skills) {
     this.ai     = aiEngine;
     this.memory = memory;
+    this.skills = skills;
     this.name   = 'file';
     this.cwd    = process.cwd();
     // File size limit — don't read huge files into AI context

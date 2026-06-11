@@ -8,9 +8,10 @@ const axios = require('axios');
 // Used when task contains: search, find, lookup, fetch, scrape, check, latest
 
 class WebAgent {
-  constructor(aiEngine, memory) {
+  constructor(aiEngine, memory, skills) {
     this.ai     = aiEngine;
     this.memory = memory;
+    this.skills = skills;
     this.name   = 'web';
     this.timeout = 15000;
   }
