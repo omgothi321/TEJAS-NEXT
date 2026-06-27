@@ -12,7 +12,7 @@ class TejasDatabase {
 
   async initialize() {
     await fs.ensureDir(path.dirname(this.dbPath));
-    this.db = new Database(this.dbPath);
+    this.db = new Database(this.dbPath, { timeout: 5000 });
     this.db.pragma('journal_mode = WAL');
 
     this._createTables();

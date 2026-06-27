@@ -13,15 +13,15 @@ class Sanitizer {
   static sanitizeShell(command) {
     if (!command) return '';
 
-    // 🛡️ Block destructive commands
+    // 🛡️ Block destructive commands anywhere in the command
     const DESTRUCTIVE = [
-      /^rm\s+-[rf]{1,3}\s+\//i,
-      /^mkfs/i,
-      /^dd\s+if=/i,
-      /^chmod\s+-R\s+777\s+\//i
+      /rm\s+-[rf]{1,3}\s+\//i,
+      /mkfs/i,
+      /dd\s+if=/i,
+      /chmod\s+-R\s+777\s+\//i
     ];
     for (const p of DESTRUCTIVE) {
-      if (p.test(command.trim())) {
+      if (p.test(command)) {
         throw new Error(`Blocked destructive command: ${command}`);
       }
     }
@@ -69,9 +69,11 @@ class Sanitizer {
   static sanitizePath(filePath, rootDir = process.cwd()) {
     if (!filePath) throw new Error('No path provided');
     
-    const absolutePath = path.isAbsolute(filePath) 
-      ? path.normalize(filePath) 
-      : path.normalize(path.join(rootDir, filePath));
+    // Normalize backslashes to forward slashes to prevent bypass on POSIX
+    const normalizedFilePath = filePath.replace(/\\/g, '/');
+    const absolutePath = path.isAbsolute(normalizedFilePath) 
+      ? path.normalize(normalizedFilePath) 
+      : path.normalize(path.join(rootDir, normalizedFilePath));
 
     if (!absolutePath.startsWith(path.normalize(rootDir))) {
       throw new Error(`Security Alert: Path traversal attempt blocked: "${filePath}"`);

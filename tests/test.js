@@ -41,7 +41,7 @@ async function runTests() {
       Sanitizer.sanitizeShell('ls && rm -rf /');
       throw new Error('Should have blocked &&');
     } catch (e) {
-      if (!e.message.includes('Forbidden shell operator')) throw e;
+      if (!e.message.includes('Forbidden shell operator') && !e.message.includes('Blocked destructive command')) throw e;
     }
   });
 

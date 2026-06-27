@@ -103,8 +103,9 @@ class MemoryManager {
 
   // ── INIT ─────────────────────────────────────────────────────────────────
   async initialize(projectMeta = {}) {
-    // If local .tejas doesn't exist, we fallback to global .tejas (Always-On Mode)
-    if (!await fs.pathExists(this.tejasDir)) {
+    // Only fallback to global .tejas if rootDir is process.cwd() (default) and local .tejas doesn't exist.
+    // This prevents tests/benchmarks using temporary directories from colliding on the global database.
+    if (this.rootDir === process.cwd() && !await fs.pathExists(this.tejasDir)) {
       this.tejasDir = this.globalDir;
       this.dbPath   = path.join(this.tejasDir, DB_FILE);
       this.db       = new TejasDatabase(this.tejasDir);

@@ -57,11 +57,50 @@ const ROUTING_RULES = [
   }
 ];
 
+// ─── CIRCUIT BREAKER ──────────────────────────────────────────────────────────
+// If a model fails 3 times consecutively, skip it for 5 minutes.
+class CircuitBreaker {
+  constructor() {
+    this.failures = {};
+    this.openUntil = {};
+  }
+
+  isOpen(model) {
+    return this.openUntil[model] && Date.now() < this.openUntil[model];
+  }
+
+  recordFailure(model) {
+    this.failures[model] = (this.failures[model] || 0) + 1;
+    if (this.failures[model] >= 3) {
+      this.openUntil[model] = Date.now() + 5 * 60 * 1000;
+      console.log(`[Router] ⚡ ${model} circuit open — switching to fallback`);
+    }
+  }
+
+  recordSuccess(model) {
+    this.failures[model] = 0;
+    delete this.openUntil[model];
+  }
+
+  getStatus() {
+    const status = {};
+    for (const [model, until] of Object.entries(this.openUntil)) {
+      status[model] = {
+        open: Date.now() < until,
+        failures: this.failures[model] || 0,
+        reopens_in_ms: Math.max(0, until - Date.now())
+      };
+    }
+    return status;
+  }
+}
+
 class SmartModelRouter {
   constructor(availableModels = {}) {
     // availableModels = { groq: true, gemini: true, xai: false, deepseek: false, ollama: false }
     this.available = availableModels;
     this._history  = []; // track which models worked
+    this.breaker   = new CircuitBreaker();
   }
 
   // ── SELECT MODEL FOR TASK ─────────────────────────────────────────────────
@@ -133,6 +172,28 @@ class SmartModelRouter {
       success_rate: Math.round((stats.success / stats.calls) * 100) + '%',
       avg_ms:       Math.round(stats.totalMs / stats.calls)
     }));
+  }
+
+  // ── ROUTE WITH RESILIENCE ─────────────────────────────────────────────────
+  async routeWithFallback(task, callFn) {
+    const sel = this.selectModel(task);
+    const chain = [sel.model, ...((sel.prefer || []).filter(m => m !== sel.model)), 'ollama'];
+    const unique = [...new Set(chain)].filter(m => this.available[m]);
+
+    for (const model of unique) {
+      if (this.breaker.isOpen(model)) continue;
+      const start = Date.now();
+      try {
+        const result = await callFn(model);
+        this.breaker.recordSuccess(model);
+        this.trackResult(model, task, true, Date.now() - start);
+        return result;
+      } catch (err) {
+        this.breaker.recordFailure(model);
+        this.trackResult(model, task, false, Date.now() - start);
+      }
+    }
+    throw new Error('All AI models failed — all circuits open or exhausted');
   }
 }
 

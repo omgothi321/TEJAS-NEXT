@@ -13,3 +13,4 @@ logs/
 *.tmp
 *.tar.gz
 *.log
+google*.html

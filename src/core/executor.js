@@ -170,10 +170,10 @@ class Executor {
       /rm\s+-rf\s+\//i,
       /mkfs/i,
       /dd\s+if=/i,
-      /:\(\)\{:\|:&\};:/,
+      /:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/,
       /chmod\s+-R\s+777\s+\//i,
-      /curl\s*\|\s*(ba)?sh/i,
-      /wget[^|]+\|\s*(ba)?sh/i
+      /curl[^|]*\|\s*(ba)?sh/i,
+      /wget[^|]*\|\s*(ba)?sh/i
     ];
     return !patterns.some(p => p.test(command));
   }
